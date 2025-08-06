@@ -1,0 +1,34 @@
+# GUI
+PyQt5==5.15.9
+streamlit
+
+# OCR (EasyOCR needs Torch)
+easyocr
+torch
+
+# PDF Parsing
+PyMuPDF==1.22.3
+Pillow==9.5.0
+
+#docx
+python-docx
+
+
+# HTTP Client for LLM interaction (Ollama)
+requests==2.31.0
+
+fitz
+markdown2 
+pdfkit
+fpdf
+markdown-it-py
+markdown-pdf
+PyPDF2
+pycryptodome
+reportlab
+
+openai
+dotenv
+tiktoken
+tenacity
+
