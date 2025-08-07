@@ -6,7 +6,7 @@ easyocr
 torch
 
 # PDF Parsing
-PyMuPDF==1.22.3
+PyMuPDF==1.25.3
 Pillow==9.5.0
 
 #docx
