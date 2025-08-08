@@ -3,7 +3,7 @@ from PyPDF2 import PdfReader, PdfWriter
 import os
 import re
 import json
-from models.llm_client import ask_llama3_stream_false
+from models.llm_client import ask_llama3_stream_false, ask_openai_sync
 
 
 def get_visible_page_numbers(pdf_path):
@@ -124,7 +124,7 @@ Text sample:
 {combined_text[:8000]}
 ----------------
 """
-    response = ask_llama3_stream_false(prompt.strip(), model=model)
+    response = ask_openai_sync(prompt.strip(), model=model)
     match = re.search(r"\{[\s\S]+?\}", response)
     if not match:
         print("❌ Could not extract dictionary from LLM response.")
