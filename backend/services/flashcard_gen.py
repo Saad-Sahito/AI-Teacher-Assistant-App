@@ -43,7 +43,7 @@ def generate_flashcards_from_path(input_path, model="o4-mini"):
     return flashcards_combined
 
 
-def generate_flashcards_from_pdf(pdf_path, model="o4-mini"):
+def generate_flashcards_from_pdf(pdf_path, model="gpt-oss-120b"):
     doc = fitz.open(pdf_path)
     full_text = "\n".join([page.get_text() for page in doc])
 
