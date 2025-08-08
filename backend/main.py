@@ -7,7 +7,7 @@ from services.quiz_gen import generate_quiz_from_text
 #from services.flashcard_gen import generate_flashcards_from_path
 from services.summarizer import summarize_text
 #from services.chapter_splitter import main_split
-from backend.services.text_to_pdf_docx import convert_text_to_pdf, generate_pdf, generate_docx
+from services.text_to_pdf_docx import convert_text_to_pdf, generate_pdf, generate_docx
 
 
 
