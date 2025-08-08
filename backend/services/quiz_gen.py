@@ -7,9 +7,9 @@ import json
 import re
 
 
-def generate_quiz_from_text(text, num_questions, quiz_type="MCQs", class_grade=None, subject=None):
+def generate_quiz_from_text(text, num_questions, quiz_type="Mixed", class_grade=None, subject=None):
     prompt = f"""
-You are a quiz generator AI. Generate {num_questions} questions in {quiz_type} format, from the following study material, for a {subject} {class_grade} class. 
+You are a quiz generator AI. Generate {num_questions} questions in {quiz_type} question answer format, from the following study material, for a {subject} {class_grade} class. 
 Output questions and answers key in the end.
 
 Study Material:

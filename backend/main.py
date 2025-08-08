@@ -56,8 +56,8 @@ feature = st.sidebar.radio("Choose a feature", [
 ])
 class_grade_options = ["grade 1","grade 2","grade 3","grade 4","grade 5","grade 6","grade 7","grade 8","grade 9","grade 10","grade 11","grade 12","1st year college","2nd year college","3rd year college","4th year college"]
 prompt_type_options = ["Summary", "Class Notes", "Lesson Plan"]
-subject_options = ["Science", "Mathematics", "History", "Geography", "English Language", "Physics", "Chemistry", "Islamic Studies"]
-quiz_type_options = ["MCQs", "True/False", "Short Answers", "Long Answers", "Fill in the Blanks"]
+subject_options = ["Science", "Mathematics", "History", "Geography", "English Language", "Physics", "Chemistry", "Islamic Studies", "Computer Studies", "Biology", "Psychology", "Thermodynamics", "Other"]
+quiz_type_options = ["MCQs", "True/False", "Short Answers", "Long Answers", "Fill in the Blanks", "Mixed"]
 # if feature == "📄 Flashcards":
 #     uploaded_file = st.file_uploader("Upload a PDF to generate flashcards", type=["pdf"])
 #     if uploaded_file and st.button("Generate Flashcards"):
@@ -93,15 +93,12 @@ if feature == "📝 Quiz Generator":
         st.success("✅ PDF text extracted!")
 
     text_input = st.text_area("✏️ Paste or edit content for quiz generation (Make sure to remove answers, before preparing PDF file.):", value=default_text, height=300)
-
     num_questions = st.number_input("🔢 Number of questions", min_value=1, max_value=200, value=5, step=1)
-
     class_grade = st.selectbox("Choose class grade: (Consider Intermediate/A-Level to be grade 11/12)", class_grade_options)
-
     subject = st.selectbox("Choose class subject:", subject_options)
     quiz_type = st.selectbox("Choose quiz style:", quiz_type_options)
 
-    if st.button("Generate Quiz") and text_input.strip() and class_grade and subject and num_questions:
+    if st.button("Generate Quiz") and text_input.strip():
         with st.spinner("Generating quiz..."):
             quiz = generate_quiz_from_text(text=text_input, num_questions=num_questions, quiz_type=quiz_type, class_grade=class_grade, subject=subject)
             st.session_state.quiz_data = quiz  # store in session state
@@ -176,16 +173,11 @@ elif feature == "📝 Summarizer":
         except Exception as e:
             st.error(f"❌ Failed to extract text: {str(e)}")
 
+    raw_text = st.text_area("✏️ Paste or edit the text to summarize", value=default_text, height=300)
     class_grade = st.selectbox("Choose class grade: (Consider Intermediate/A-Level to be grade 11/12)", class_grade_options)
-
     subject = st.selectbox("Choose class subject:", subject_options)
-    
-
     prompt_type = st.selectbox("Choose a summary type:", prompt_type_options)
 
-
-
-    raw_text = st.text_area("✏️ Paste or edit the text to summarize", value=default_text, height=300)
     # Summarization and PDF generation flow
     if st.button("Summarize") and raw_text.strip():
         with st.spinner("Summarizing..."):
