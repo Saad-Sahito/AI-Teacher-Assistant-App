@@ -2,18 +2,21 @@ import requests
 import json
 import traceback
 import os
+import streamlit as st
 from dotenv import load_dotenv
 from pathlib import Path
 from openai import OpenAIError, RateLimitError, OpenAI
 from tenacity import retry, wait_random_exponential, stop_after_attempt, retry_if_exception_type
 
 
-# Get path to .env in parent directory
-env_path = Path(__file__).resolve().parent.parent / "api" / ".env"
+# # Get path to .env in parent directory
+# env_path = Path(__file__).resolve().parent.parent / "api" / ".env"
 
-# Load it
-load_dotenv(dotenv_path=env_path)
+# # Load it
+# load_dotenv(dotenv_path=env_path)
 
+
+api_key = st.secrets["api"]["OPENAI_API_KEY"]
 
 # Initialize OpenAI client with your API key
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY") )
