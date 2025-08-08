@@ -19,7 +19,7 @@ from tenacity import retry, wait_random_exponential, stop_after_attempt, retry_i
 api_key = st.secrets["api"]["OPENAI_API_KEY"]
 
 # Initialize OpenAI client with your API key
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY") )
+client = OpenAI(api_key=api_key )
                 
 
 
