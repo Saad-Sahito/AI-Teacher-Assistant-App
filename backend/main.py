@@ -8,9 +8,27 @@ from services.flashcard_gen import generate_flashcards_from_path
 from services.summarizer import summarize_text
 from services.chapter_splitter import main_split
 
+from io import BytesIO
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
 
 
+# PDF generation function
+def generate_pdf(summary_text):
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    styles = getSampleStyleSheet()
+    flowables = []
 
+    for para in summary_text.split("\n\n"):
+        flowables.append(Paragraph(para.strip(), styles["Normal"]))
+        flowables.append(Spacer(1, 12))
+
+    doc.build(flowables)
+    pdf = buffer.getvalue()
+    buffer.close()
+    return pdf
 
 
 
@@ -54,25 +72,25 @@ feature = st.sidebar.radio("Choose a feature", [
     "📖 Split Chapters"
 ])
 
-if feature == "📄 Flashcards":
-    uploaded_file = st.file_uploader("Upload a PDF to generate flashcards", type=["pdf"])
-    if uploaded_file and st.button("Generate Flashcards"):
-        # Save uploaded file to a temporary file
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
-            tmp_file.write(uploaded_file.read())
-            temp_pdf_path = tmp_file.name
+# if feature == "📄 Flashcards":
+#     uploaded_file = st.file_uploader("Upload a PDF to generate flashcards", type=["pdf"])
+#     if uploaded_file and st.button("Generate Flashcards"):
+#         # Save uploaded file to a temporary file
+#         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+#             tmp_file.write(uploaded_file.read())
+#             temp_pdf_path = tmp_file.name
 
-        try:
-            flashcards = generate_flashcards_from_path(temp_pdf_path)
+#         try:
+#             flashcards = generate_flashcards_from_path(temp_pdf_path)
 
-            for i, (q, a) in enumerate(flashcards.items()):
-                st.markdown(f"**Q{i+1}: {q}**")
-                st.markdown(f"🔹 {a}")
-                st.markdown("---")
-        except Exception as e:
-            st.error(str(e))
+#             for i, (q, a) in enumerate(flashcards.items()):
+#                 st.markdown(f"**Q{i+1}: {q}**")
+#                 st.markdown(f"🔹 {a}")
+#                 st.markdown("---")
+#         except Exception as e:
+#             st.error(str(e))
 
-elif feature == "📝 Quiz Generator":
+if feature == "📝 Quiz Generator":
     st.title("📝 Quiz Generator")
 
     uploaded_pdf = st.file_uploader("📄 Upload a PDF (optional)", type=["pdf"])
@@ -135,45 +153,68 @@ elif feature == "📝 Summarizer":
         except Exception as e:
             st.error(f"❌ Failed to extract text: {str(e)}")
 
-    prompt_type_options = ["summary", "class_notes"]
+    class_grade_options = ["grade 1","grade 2","grade 3","grade 4","grade 5","grade 6","grade 7","grade 8","grade 9","grade 10","grade 11","grade 12","1st year college","2nd year college","3rd year college","4th year college"]
+    class_grade = st.selectbox("Choose class grade: (Consider Intermediate/A-Level to be grade 11/12)", class_grade_options)
+
+    subject_options = ["Science", "Mathematics", "History", "Geography", "English Language", "Physics", "Chemistry", "Islamic Studies"]
+    subject = st.selectbox("Choose class subject:", subject_options)
+    
+    prompt_type_options = ["Summary", "Class Notes", "Lesson Plan"]
     prompt_type = st.selectbox("Choose a summary type:", prompt_type_options)
 
     st.write(f"You selected: {prompt_type}")
 
-    user_input = st.text_area("✏️ Paste or edit the text to summarize", value=default_text, height=300)
+    raw_text = st.text_area("✏️ Paste or edit the text to summarize", value=default_text, height=300)
 
-    if st.button("Summarize") and user_input.strip():
+    if st.button("Summarize") and raw_text.strip():
         with st.spinner("Summarizing..."):
             try:
-                summary = summarize_text(prompt_type, user_input)
+                summary = summarize_text(
+                    prompt_type=prompt_type,
+                    raw_text=raw_text,
+                    class_grade=class_grade,
+                    subject=subject
+                )
                 st.success("📝 Summary:")
                 st.markdown(summary)
+
+                # Generate PDF on button click
+                if st.button("Convert to PDF") and summary:
+                    pdf_bytes = generate_pdf(summary)
+
+                    st.download_button(
+                        label="📄 Download PDF",
+                        data=pdf_bytes,
+                        file_name="summary.pdf",
+                        mime="application/pdf"
+                    )
+
             except Exception as e:
                 st.error(f"❌ Error: {str(e)}")
 
-elif feature == "📖 Split Chapters":
-    uploaded_file = st.file_uploader("Upload a PDF to split into chapters", type=["pdf"])
-    if uploaded_file and st.button("Split Chapters"):
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
-            tmp_file.write(uploaded_file.read())
-            temp_pdf_path = tmp_file.name
+# elif feature == "📖 Split Chapters":
+#     uploaded_file = st.file_uploader("Upload a PDF to split into chapters", type=["pdf"])
+#     if uploaded_file and st.button("Split Chapters"):
+#         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+#             tmp_file.write(uploaded_file.read())
+#             temp_pdf_path = tmp_file.name
 
-        # Create main output folder inside ../assets
-        base_output_dir = os.path.join("..", "assets", "chapters_output")
-        os.makedirs(base_output_dir, exist_ok=True)
+#         # Create main output folder inside ../assets
+#         base_output_dir = os.path.join("..", "assets", "chapters_output")
+#         os.makedirs(base_output_dir, exist_ok=True)
 
-        # Create subfolder using uploaded file name (without extension)
-        file_name = os.path.splitext(uploaded_file.name)[0]
-        output_dir = os.path.join(base_output_dir, file_name)
-        os.makedirs(output_dir, exist_ok=True)
+#         # Create subfolder using uploaded file name (without extension)
+#         file_name = os.path.splitext(uploaded_file.name)[0]
+#         output_dir = os.path.join(base_output_dir, file_name)
+#         os.makedirs(output_dir, exist_ok=True)
 
-        main_split(temp_pdf_path, output_dir)
+#         main_split(temp_pdf_path, output_dir)
 
-        for ch_filename in sorted(os.listdir(output_dir)):
-            ch_path = os.path.join(output_dir, ch_filename)
-            st.markdown(f"#### {ch_filename}")
-            with open(ch_path, "rb") as f:
-                st.download_button(f"📥 Download {ch_filename}", f, file_name=ch_filename)
+#         for ch_filename in sorted(os.listdir(output_dir)):
+#             ch_path = os.path.join(output_dir, ch_filename)
+#             st.markdown(f"#### {ch_filename}")
+#             with open(ch_path, "rb") as f:
+#                 st.download_button(f"📥 Download {ch_filename}", f, file_name=ch_filename)
 
 
 
