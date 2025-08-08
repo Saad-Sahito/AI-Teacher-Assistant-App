@@ -135,12 +135,17 @@ elif feature == "📝 Summarizer":
         except Exception as e:
             st.error(f"❌ Failed to extract text: {str(e)}")
 
+    prompt_type_options = ["summary", "class_notes"]
+    prompt_type = st.selectbox("Choose a summary type:", prompt_type_options)
+
+    st.write(f"You selected: {prompt_type}")
+
     user_input = st.text_area("✏️ Paste or edit the text to summarize", value=default_text, height=300)
 
     if st.button("Summarize") and user_input.strip():
         with st.spinner("Summarizing..."):
             try:
-                summary = summarize_text(user_input)
+                summary = summarize_text(prompt_type, user_input)
                 st.success("📝 Summary:")
                 st.markdown(summary)
             except Exception as e:
