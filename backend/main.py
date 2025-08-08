@@ -4,9 +4,10 @@ import tempfile
 from PyPDF2 import PdfReader
 
 from services.quiz_gen import generate_quiz_from_text, generate_quiz_docx
-from services.flashcard_gen import generate_flashcards_from_path
+#from services.flashcard_gen import generate_flashcards_from_path
 from services.summarizer import summarize_text
-from services.chapter_splitter import main_split
+#from services.chapter_splitter import main_split
+from services.text_to_pdf import convert_text_to_pdf
 
 from io import BytesIO
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
@@ -14,22 +15,72 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 
 
-# PDF generation function
-def generate_pdf(summary_text):
+from docx import Document
+from io import BytesIO
+
+def generate_summary_docx(formatted_text, title="Summary from AI", class_grade=None, subject=None):
+    doc = Document()
+
+    # Add title
+    doc.add_heading(title, level=1)
+
+    # Add metadata
+    if class_grade or subject:
+        meta_line = ""
+        if class_grade:
+            meta_line += f"Class: {class_grade}  "
+        if subject:
+            meta_line += f"Subject: {subject}"
+        doc.add_paragraph(meta_line)
+
+    doc.add_paragraph("")  # Spacer
+
+    # Add content (split on double newlines)
+    for para in formatted_text.strip().split("\n\n"):
+        doc.add_paragraph(para.strip())
+
+    # Convert to BytesIO
+    buffer = BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    return buffer.getvalue()
+
+
+
+# PDF generation from Markdown-like formatted text
+def generate_pdf(formatted_text, title=None, class_grade=None, subject=None):
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4)
     styles = getSampleStyleSheet()
     flowables = []
 
-    for para in summary_text.split("\n\n"):
-        flowables.append(Paragraph(para.strip(), styles["Normal"]))
+    title_style = styles["Title"]
+    subtitle_style = styles["Heading2"]
+    normal_style = styles["Normal"]
+
+    # Add metadata
+    if title:
+        flowables.append(Paragraph(title, title_style))
+        flowables.append(Spacer(1, 12))
+    
+    if class_grade or subject:
+        metadata = ""
+        if class_grade:
+            metadata += f"<b>Class:</b> {class_grade}<br/>"
+        if subject:
+            metadata += f"<b>Subject:</b> {subject}"
+        flowables.append(Paragraph(metadata, subtitle_style))
+        flowables.append(Spacer(1, 12))
+
+    # Add formatted text
+    for para in formatted_text.split("\n\n"):
+        flowables.append(Paragraph(para.strip(), normal_style))
         flowables.append(Spacer(1, 12))
 
     doc.build(flowables)
     pdf = buffer.getvalue()
     buffer.close()
     return pdf
-
 
 
 
@@ -66,11 +117,14 @@ st.title("🧠 AI App")
 
 # Sidebar navigation
 feature = st.sidebar.radio("Choose a feature", [
-    "📄 Flashcards",
+    #"📄 Flashcards",
     "📝 Quiz Generator",
     "📝 Summarizer",
-    "📖 Split Chapters"
+    #"📖 Split Chapters"
 ])
+class_grade_options = ["grade 1","grade 2","grade 3","grade 4","grade 5","grade 6","grade 7","grade 8","grade 9","grade 10","grade 11","grade 12","1st year college","2nd year college","3rd year college","4th year college"]
+prompt_type_options = ["Summary", "Class Notes", "Lesson Plan"]
+subject_options = ["Science", "Mathematics", "History", "Geography", "English Language", "Physics", "Chemistry", "Islamic Studies"]
 
 # if feature == "📄 Flashcards":
 #     uploaded_file = st.file_uploader("Upload a PDF to generate flashcards", type=["pdf"])
@@ -110,22 +164,61 @@ if feature == "📝 Quiz Generator":
 
     num_questions = st.number_input("🔢 Number of questions", min_value=1, max_value=200, value=5, step=1)
 
+    class_grade = st.selectbox("Choose class grade: (Consider Intermediate/A-Level to be grade 11/12)", class_grade_options)
+
+    subject = st.selectbox("Choose class subject:", subject_options)
+    
+
+    prompt_type = st.selectbox("Choose a summary type:", prompt_type_options)
+
+
+
     if st.button("Generate Quiz") and text_input.strip():
         with st.spinner("Generating quiz..."):
             quiz = generate_quiz_from_text(text_input, num_questions=num_questions)
             st.session_state.quiz_data = quiz  # store in session state
             display_quiz(quiz)
 
-    # Check if quiz is stored
-    if "quiz_data" in st.session_state:
-        if st.button("Download Quiz as Word File"):
-            docx_file = generate_quiz_docx(st.session_state.quiz_data, title="Quiz from AI")
-            st.download_button(
-                label="📥 Download Word File",
-                data=docx_file,
-                file_name="ai_generated_quiz.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            )
+        if "quiz_data" in st.session_state:
+            quiz_text = st.session_state.quiz_data
+
+            st.subheader("🧪 AI-Generated Quiz")
+            st.markdown(quiz_text)
+
+            # Format quiz using LLM
+            with st.spinner("Formatting quiz for export..."):
+                formatted_quiz = convert_text_to_pdf(quiz_text)
+
+            # PDF Export
+            if st.button("Download Quiz as PDF"):
+                quiz_pdf = generate_pdf(
+                    formatted_text=formatted_quiz,
+                    title="🧪 Quiz",
+                    class_grade=class_grade,
+                    subject=subject
+                )
+                st.download_button(
+                    label="📄 Download PDF",
+                    data=quiz_pdf,
+                    file_name="ai_generated_quiz.pdf",
+                    mime="application/pdf"
+                )
+
+            # Word Export
+            if st.button("Download Quiz as Word File"):
+                quiz_docx = generate_summary_docx(
+                    formatted_text=formatted_quiz,
+                    title="Quiz from AI",
+                    class_grade=class_grade,
+                    subject=subject
+                )
+                st.download_button(
+                    label="📥 Download Word File",
+                    data=quiz_docx,
+                    file_name="ai_generated_quiz.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                )
+
 
 
 
@@ -153,22 +246,21 @@ elif feature == "📝 Summarizer":
         except Exception as e:
             st.error(f"❌ Failed to extract text: {str(e)}")
 
-    class_grade_options = ["grade 1","grade 2","grade 3","grade 4","grade 5","grade 6","grade 7","grade 8","grade 9","grade 10","grade 11","grade 12","1st year college","2nd year college","3rd year college","4th year college"]
     class_grade = st.selectbox("Choose class grade: (Consider Intermediate/A-Level to be grade 11/12)", class_grade_options)
 
-    subject_options = ["Science", "Mathematics", "History", "Geography", "English Language", "Physics", "Chemistry", "Islamic Studies"]
     subject = st.selectbox("Choose class subject:", subject_options)
     
-    prompt_type_options = ["Summary", "Class Notes", "Lesson Plan"]
+
     prompt_type = st.selectbox("Choose a summary type:", prompt_type_options)
 
-    st.write(f"You selected: {prompt_type}")
+
 
     raw_text = st.text_area("✏️ Paste or edit the text to summarize", value=default_text, height=300)
-
+    # Summarization and PDF generation flow
     if st.button("Summarize") and raw_text.strip():
         with st.spinner("Summarizing..."):
             try:
+                # Step 1: Summarize
                 summary = summarize_text(
                     prompt_type=prompt_type,
                     raw_text=raw_text,
@@ -178,9 +270,18 @@ elif feature == "📝 Summarizer":
                 st.success("📝 Summary:")
                 st.markdown(summary)
 
-                # Generate PDF on button click
-                if st.button("Convert to PDF") and summary:
-                    pdf_bytes = generate_pdf(summary)
+                # Step 2: Convert to formatted Markdown for PDF
+                with st.spinner("Formatting summary for PDF..."):
+                    formatted_summary = convert_text_to_pdf(summary)
+
+                # Step 3: Add PDF conversion button
+                if st.button("Convert to PDF"):
+                    pdf_bytes = generate_pdf(
+                        formatted_text=formatted_summary,
+                        title="📝 Generated Summary",
+                        class_grade=class_grade,
+                        subject=subject
+                    )
 
                     st.download_button(
                         label="📄 Download PDF",
