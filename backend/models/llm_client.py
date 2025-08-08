@@ -9,7 +9,7 @@ from tenacity import retry, wait_random_exponential, stop_after_attempt, retry_i
 
 
 # Get path to .env in parent directory
-env_path = Path(__file__).resolve().parent.parent / ".env"
+env_path = Path(__file__).resolve().parent.parent / "api" / ".env"
 
 # Load it
 load_dotenv(dotenv_path=env_path)

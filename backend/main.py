@@ -146,8 +146,6 @@ elif feature == "📝 Summarizer":
             except Exception as e:
                 st.error(f"❌ Error: {str(e)}")
 
-
-
 elif feature == "📖 Split Chapters":
     uploaded_file = st.file_uploader("Upload a PDF to split into chapters", type=["pdf"])
     if uploaded_file and st.button("Split Chapters"):
@@ -155,8 +153,8 @@ elif feature == "📖 Split Chapters":
             tmp_file.write(uploaded_file.read())
             temp_pdf_path = tmp_file.name
 
-        # Create main output folder
-        base_output_dir = "chapters_output"
+        # Create main output folder inside ../assets
+        base_output_dir = os.path.join("..", "assets", "chapters_output")
         os.makedirs(base_output_dir, exist_ok=True)
 
         # Create subfolder using uploaded file name (without extension)
@@ -166,12 +164,12 @@ elif feature == "📖 Split Chapters":
 
         main_split(temp_pdf_path, output_dir)
 
-        #if os.path.exists(chapter_folder):
         for ch_filename in sorted(os.listdir(output_dir)):
             ch_path = os.path.join(output_dir, ch_filename)
             st.markdown(f"#### {ch_filename}")
             with open(ch_path, "rb") as f:
                 st.download_button(f"📥 Download {ch_filename}", f, file_name=ch_filename)
+
 
 
 

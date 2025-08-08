@@ -36,22 +36,33 @@ def map_chapters_to_internal_indices(chapters, visible_to_internal):
     return internal_chapters
 
 
-def interpolate_visible_to_internal_map(visible_to_internal):
-    """Fills in missing visible page numbers by linear interpolation between known ones."""
+def interpolate_visible_to_internal_map(visible_to_internal, max_interpolation_range=100):
+    """Fills in missing visible page numbers by linear interpolation between known ones,
+    with safety checks to avoid large memory usage."""
+    
     known = sorted(visible_to_internal.items())
     full_map = {}
 
     for i in range(len(known) - 1):
         vis1, int1 = known[i]
         vis2, int2 = known[i + 1]
-        step = (int2 - int1) / (vis2 - vis1)
+        delta = vis2 - vis1
 
+        if delta > max_interpolation_range:
+            print(f"⚠️ Skipping interpolation: visible page range too large ({vis1} → {vis2})")
+            continue
+
+        step = (int2 - int1) / delta
+        print(f"🔄 Interpolating: visible {vis1}-{vis2}, internal {int1}-{int2}, step={step:.2f}")
+        
         for v in range(vis1, vis2):
             full_map[v] = round(int1 + step * (v - vis1))
 
     # Add the last known page
     full_map[known[-1][0]] = known[-1][1]
+
     return full_map
+
 
 def split_pdf_by_chapter_list(pdf_path, chapters, output_dir):
     os.makedirs(output_dir, exist_ok=True)
