@@ -86,7 +86,7 @@ def split_pdf_by_chapter_list(pdf_path, chapters, output_dir):
         print(f"✅ Saved: {out_path}")
 
 
-def extract_chapters_from_index_with_llm(pdf_path, model="llama3.1:latest", max_pages=10):
+def extract_chapters_from_index_with_llm(pdf_path, model="gpt-oss-120b", max_pages=10):
     doc = fitz.open(pdf_path)
     index_texts = []
     for i in range(min(max_pages, len(doc))):
