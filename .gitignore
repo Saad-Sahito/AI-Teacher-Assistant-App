@@ -1,92 +1,47 @@
-# Byte-compiled / optimized / DLL files
+# Python bytecode
 __pycache__/
 *.py[cod]
-*$py.class
+*.pyo
 
-# C extensions
-*.so
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Environments
-.env
-.venv
-env/
+# Virtual environments
+.venv/
 venv/
 ENV/
-env.bak/
-venv.bak/
-
-# Virtualenv (Streamlit usually uses this)
-.venv/
+env/
 *.env
 
-# Pyre type checker
-.pyre/
+# Streamlit credentials & config
+.streamlit/credentials.toml
+.streamlit/config.toml
 
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
+# Jupyter notebooks
+.ipynb_checkpoints/
 
-# Pytype
-.pytype/
+# Log files
+*.log
 
-# Pytest
-.cache/
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-
-# Test reporting
-htmlcov/
-
-# Jupyter
-.ipynb_checkpoints
-
-# pyenv
-.python-version
+# OS files
+.DS_Store
+Thumbs.db
 
 # VSCode settings
 .vscode/
 
-# macOS
-.DS_Store
+# Python packaging
+*.egg-info/
+build/
+dist/
 
-# Windows
-Thumbs.db
-ehthumbs.db
-Desktop.ini
+# Test and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.cache/
 
-# Streamlit
-.streamlit/config.toml
-.streamlit/credentials.toml
+# Others
+*.spec
+*.sqlite3
+*.db
+
+# Ignore output folders
+backend/chapters_output/
