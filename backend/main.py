@@ -3,109 +3,41 @@ import os
 import tempfile
 from PyPDF2 import PdfReader
 
-from services.quiz_gen import generate_quiz_from_text, generate_quiz_docx
+from services.quiz_gen import generate_quiz_from_text
 #from services.flashcard_gen import generate_flashcards_from_path
 from services.summarizer import summarize_text
 #from services.chapter_splitter import main_split
-from services.text_to_pdf import convert_text_to_pdf
-
-from io import BytesIO
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet
-
-
-from docx import Document
-from io import BytesIO
-
-def generate_summary_docx(formatted_text, title="Summary from AI", class_grade=None, subject=None):
-    doc = Document()
-
-    # Add title
-    doc.add_heading(title, level=1)
-
-    # Add metadata
-    if class_grade or subject:
-        meta_line = ""
-        if class_grade:
-            meta_line += f"Class: {class_grade}  "
-        if subject:
-            meta_line += f"Subject: {subject}"
-        doc.add_paragraph(meta_line)
-
-    doc.add_paragraph("")  # Spacer
-
-    # Add content (split on double newlines)
-    for para in formatted_text.strip().split("\n\n"):
-        doc.add_paragraph(para.strip())
-
-    # Convert to BytesIO
-    buffer = BytesIO()
-    doc.save(buffer)
-    buffer.seek(0)
-    return buffer.getvalue()
+from backend.services.text_to_pdf_docx import convert_text_to_pdf, generate_pdf, generate_docx
 
 
 
-# PDF generation from Markdown-like formatted text
-def generate_pdf(formatted_text, title=None, class_grade=None, subject=None):
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4)
-    styles = getSampleStyleSheet()
-    flowables = []
-
-    title_style = styles["Title"]
-    subtitle_style = styles["Heading2"]
-    normal_style = styles["Normal"]
-
-    # Add metadata
-    if title:
-        flowables.append(Paragraph(title, title_style))
-        flowables.append(Spacer(1, 12))
-    
-    if class_grade or subject:
-        metadata = ""
-        if class_grade:
-            metadata += f"<b>Class:</b> {class_grade}<br/>"
-        if subject:
-            metadata += f"<b>Subject:</b> {subject}"
-        flowables.append(Paragraph(metadata, subtitle_style))
-        flowables.append(Spacer(1, 12))
-
-    # Add formatted text
-    for para in formatted_text.split("\n\n"):
-        flowables.append(Paragraph(para.strip(), normal_style))
-        flowables.append(Spacer(1, 12))
-
-    doc.build(flowables)
-    pdf = buffer.getvalue()
-    buffer.close()
-    return pdf
 
 
 
-def display_quiz(quiz):
-    for idx, q in enumerate(quiz, start=1):
-        st.markdown(f"### Q{idx}: {q['question']}")
+
+
+# def display_quiz(quiz):
+#     for idx, q in enumerate(quiz, start=1):
+#         st.markdown(f"### Q{idx}: {q['question']}")
         
-        # Display options
-        for option in q["options"]:
-            st.markdown(f"- {option}")
+#         # Display options
+#         for option in q["options"]:
+#             st.markdown(f"- {option}")
 
-        # Display correct answer
-        try:
-            answer_letter = q["answer"].strip().upper()
-            if len(answer_letter) == 1 and 'A' <= answer_letter <= 'Z':
-                answer_index = ord(answer_letter) - ord('A')
-                if 0 <= answer_index < len(q['options']):
-                    correct_option_text = q['options'][answer_index]
-                    st.success(f"✅ Correct Answer: {correct_option_text}")
-                else:
-                    st.warning(f"⚠️ Invalid answer index: {answer_index}")
-            else:
-                st.success(f"✅ Correct Answer: {q['answer']}")
-        except Exception as e:
-            st.error(f"❌ Error showing answer: {str(e)}")
+#         # Display correct answer
+#         try:
+#             answer_letter = q["answer"].strip().upper()
+#             if len(answer_letter) == 1 and 'A' <= answer_letter <= 'Z':
+#                 answer_index = ord(answer_letter) - ord('A')
+#                 if 0 <= answer_index < len(q['options']):
+#                     correct_option_text = q['options'][answer_index]
+#                     st.success(f"✅ Correct Answer: {correct_option_text}")
+#                 else:
+#                     st.warning(f"⚠️ Invalid answer index: {answer_index}")
+#             else:
+#                 st.success(f"✅ Correct Answer: {q['answer']}")
+#         except Exception as e:
+#             st.error(f"❌ Error showing answer: {str(e)}")
 
 
 
@@ -125,7 +57,7 @@ feature = st.sidebar.radio("Choose a feature", [
 class_grade_options = ["grade 1","grade 2","grade 3","grade 4","grade 5","grade 6","grade 7","grade 8","grade 9","grade 10","grade 11","grade 12","1st year college","2nd year college","3rd year college","4th year college"]
 prompt_type_options = ["Summary", "Class Notes", "Lesson Plan"]
 subject_options = ["Science", "Mathematics", "History", "Geography", "English Language", "Physics", "Chemistry", "Islamic Studies"]
-
+quiz_type_options = ["MCQs", "True/False", "Short Answers", "Long Answers", "Fill in the Blanks"]
 # if feature == "📄 Flashcards":
 #     uploaded_file = st.file_uploader("Upload a PDF to generate flashcards", type=["pdf"])
 #     if uploaded_file and st.button("Generate Flashcards"):
@@ -160,29 +92,26 @@ if feature == "📝 Quiz Generator":
             default_text += page.extract_text() or ""
         st.success("✅ PDF text extracted!")
 
-    text_input = st.text_area("✏️ Paste or edit content for quiz generation:", value=default_text, height=300)
+    text_input = st.text_area("✏️ Paste or edit content for quiz generation (Make sure to remove answers, before preparing PDF file.):", value=default_text, height=300)
 
     num_questions = st.number_input("🔢 Number of questions", min_value=1, max_value=200, value=5, step=1)
 
     class_grade = st.selectbox("Choose class grade: (Consider Intermediate/A-Level to be grade 11/12)", class_grade_options)
 
     subject = st.selectbox("Choose class subject:", subject_options)
-    
+    quiz_type = st.selectbox("Choose quiz style:", quiz_type_options)
 
-    prompt_type = st.selectbox("Choose a summary type:", prompt_type_options)
-
-
-
-    if st.button("Generate Quiz") and text_input.strip():
+    if st.button("Generate Quiz") and text_input.strip() and class_grade and subject and num_questions:
         with st.spinner("Generating quiz..."):
-            quiz = generate_quiz_from_text(text_input, num_questions=num_questions)
+            quiz = generate_quiz_from_text(text=text_input, num_questions=num_questions, quiz_type=quiz_type, class_grade=class_grade, subject=subject)
             st.session_state.quiz_data = quiz  # store in session state
-            display_quiz(quiz)
+            #display_quiz(quiz)
+            st.markdown(quiz)
 
         if "quiz_data" in st.session_state:
             quiz_text = st.session_state.quiz_data
 
-            st.subheader("🧪 AI-Generated Quiz")
+            st.subheader("🧪 AI-Generated Quiz (including answers)")
             st.markdown(quiz_text)
 
             # Format quiz using LLM
@@ -193,32 +122,33 @@ if feature == "📝 Quiz Generator":
             if st.button("Download Quiz as PDF"):
                 quiz_pdf = generate_pdf(
                     formatted_text=formatted_quiz,
-                    title="🧪 Quiz",
+                    title="Quiz",
                     class_grade=class_grade,
                     subject=subject
                 )
                 st.download_button(
                     label="📄 Download PDF",
                     data=quiz_pdf,
-                    file_name="ai_generated_quiz.pdf",
+                    file_name="generated_quiz.pdf",
                     mime="application/pdf"
                 )
 
             # Word Export
             if st.button("Download Quiz as Word File"):
-                quiz_docx = generate_summary_docx(
+                quiz_docx = generate_docx(
                     formatted_text=formatted_quiz,
-                    title="Quiz from AI",
+                    title="Quiz",
                     class_grade=class_grade,
                     subject=subject
                 )
                 st.download_button(
-                    label="📥 Download Word File",
+                    label="📄 Download Word File",
                     data=quiz_docx,
-                    file_name="ai_generated_quiz.docx",
+                    file_name="generated_quiz.docx",
                     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 )
-
+    else:
+        st.write("Please enter Subject, Grade Level and Subject.")
 
 
 
@@ -278,7 +208,7 @@ elif feature == "📝 Summarizer":
                 if st.button("Convert to PDF"):
                     pdf_bytes = generate_pdf(
                         formatted_text=formatted_summary,
-                        title="📝 Generated Summary",
+                        title="📝 Generated Notes",
                         class_grade=class_grade,
                         subject=subject
                     )
@@ -286,8 +216,23 @@ elif feature == "📝 Summarizer":
                     st.download_button(
                         label="📄 Download PDF",
                         data=pdf_bytes,
-                        file_name="summary.pdf",
+                        file_name="generated_notes.pdf",
                         mime="application/pdf"
+                    )
+                # Step 4: Add DOCX conversion button
+                if st.button("Convert to Docx"):
+                    pdf_bytes = generate_docx(
+                        formatted_text=formatted_summary,
+                        title="📝 Generated Notes",
+                        class_grade=class_grade,
+                        subject=subject
+                    )
+
+                    st.download_button(
+                        label="📄 Download Docx",
+                        data=pdf_bytes,
+                        file_name="generated_notes.docx",
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                     )
 
             except Exception as e:

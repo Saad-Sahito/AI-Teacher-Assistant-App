@@ -10,7 +10,7 @@ def summarize_text(raw_text, prompt_type, class_grade=None, subject=None, model=
         prompt = f"Make class teaching notes from this text for one class:\n\n{raw_text}"
     elif prompt_type == "Lesson Plan":
         prompt = f"""
-You are an experienced teacher. Create a structured lesson plan for a {class_grade} {subject} class from the following contentfrom the following content for a single 40-minute class. Focus on engaging students and achieving clear learning outcomes.
+You are an experienced teacher. Create a structured lesson plan for a {class_grade} {subject} class from the following content from the following content for a single 40-minute class. Focus on engaging students and achieving clear learning outcomes.
 
 Use the following format:
 1. **Topic**: (Title of the lesson)

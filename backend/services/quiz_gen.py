@@ -7,19 +7,10 @@ import json
 import re
 
 
-def generate_quiz_from_text(text, num_questions=5):
+def generate_quiz_from_text(text, num_questions, quiz_type="MCQs", class_grade=None, subject=None):
     prompt = f"""
-You are a quiz generator AI. Generate {num_questions} multiple choice questions from the following study material. 
-Each question should have 1 correct option and 3 incorrect options.
-Return in this JSON format:
-[
-  {{
-    "question": "What is ...?",
-    "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
-    "answer": "A"
-  }},
-  ...
-]
+You are a quiz generator AI. Generate {num_questions} questions in {quiz_type} format, from the following study material, for a {subject} {class_grade} class. 
+Output questions and answers key in the end.
 
 Study Material:
 {text}
@@ -27,9 +18,9 @@ Study Material:
 
     response = ask_openai_sync(prompt)
     #print(response)
-    temp = extract_quiz_json(response)
+    #temp = extract_quiz_json(response)
     #print (temp)
-    return temp
+    return response
     
 
 def extract_quiz_json(content_str):
