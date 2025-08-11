@@ -89,7 +89,8 @@ MODEL_LIMITS = {
     "gpt-4o": {"context": 128_000, "output": 16_384},
     "gpt-3.5-turbo": {"context": 16_000, "output": 4_096},
     "gpt-4.1-nano-2025-04-14": {"context": 1_047_576, "output": 32_768},
-    "gpt-oss-120b": {"context": 131_072, "output": 131_072}
+    "gpt-oss-120b": {"context": 131_072, "output": 131_072},
+    "gpt-5-nano-2025-08-07": {"context": 400_000, "output": 128_000}
 }
 
 def count_tokens(text: str, model) -> int:
@@ -117,7 +118,7 @@ def get_max_tokens(prompt: str, model: str) -> int:
 
 
 
-def ask_openai_sync(prompt: str, model: str = "openai/gpt-oss-120b") -> str:
+def ask_openai_sync(prompt: str, model: str = "gpt-5-nano-2025-08-07") -> str:
     try:
         input_tokens = count_tokens(prompt, model)
         max_tokens = get_max_tokens(prompt, model)

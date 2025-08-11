@@ -231,6 +231,7 @@ elif feature == "📝 Summarizer":
                 
 elif feature == "📄 Worksheet Generator":
     uploaded_file = st.file_uploader("Upload a PDF to generate worksheets", type=["pdf"])
+    default_text = ""
     if uploaded_file and st.button("Generate Worksheet"):
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
             tmp_file.write(uploaded_file.read())
