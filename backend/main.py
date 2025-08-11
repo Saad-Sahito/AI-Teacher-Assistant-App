@@ -8,7 +8,7 @@ from services.quiz_gen import generate_quiz_from_text
 from services.summarizer import summarize_text
 #from services.chapter_splitter import main_split
 from services.text_to_pdf_docx import convert_text_to_pdf, generate_pdf, generate_docx
-
+from services.worksheet_generator import generate_worksheet
 
 
 
@@ -52,12 +52,13 @@ feature = st.sidebar.radio("Choose a feature", [
     #"📄 Flashcards",
     "📝 Quiz Generator",
     "📝 Summarizer",
+    "📄 Worksheet Generator"
     #"📖 Split Chapters"
 ])
 class_grade_options = ["grade 1","grade 2","grade 3","grade 4","grade 5","grade 6","grade 7","grade 8","grade 9","grade 10","grade 11","grade 12","1st year college","2nd year college","3rd year college","4th year college"]
 prompt_type_options = ["Summary", "Class Notes", "Lesson Plan"]
 subject_options = ["Science", "Mathematics", "History", "Geography", "English Language", "Physics", "Chemistry", "Islamic Studies", "Computer Studies", "Biology", "Psychology", "Thermodynamics", "Other"]
-quiz_type_options = ["MCQs", "True/False", "Short Answers", "Long Answers", "Fill in the Blanks", "Mixed"]
+format_options = ["MCQs", "True/False", "Short Answers", "Long Answers", "Fill in the Blanks", "Mixed"]
 # if feature == "📄 Flashcards":
 #     uploaded_file = st.file_uploader("Upload a PDF to generate flashcards", type=["pdf"])
 #     if uploaded_file and st.button("Generate Flashcards"):
@@ -96,7 +97,7 @@ if feature == "📝 Quiz Generator":
     num_questions = st.number_input("🔢 Number of questions", min_value=1, max_value=200, value=5, step=1)
     class_grade = st.selectbox("Choose class grade: (Consider Intermediate/A-Level to be grade 11/12)", class_grade_options)
     subject = st.selectbox("Choose class subject:", subject_options)
-    quiz_type = st.selectbox("Choose quiz style:", quiz_type_options)
+    quiz_type = st.selectbox("Choose quiz style:", format_options)
 
     if st.button("Generate Quiz") and text_input.strip():
         with st.spinner("Generating quiz..."):
@@ -144,9 +145,7 @@ if feature == "📝 Quiz Generator":
                     file_name="generated_quiz.docx",
                     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 )
-    else:
-        st.write("Please enter Subject, Grade Level and Subject.")
-
+    
 
 
 
@@ -224,6 +223,83 @@ elif feature == "📝 Summarizer":
                         label="📄 Download Docx",
                         data=pdf_bytes,
                         file_name="generated_notes.docx",
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    )
+
+            except Exception as e:
+                st.error(f"❌ Error: {str(e)}")
+                
+elif feature == "📝 Worksheet Generator":
+    uploaded_file = st.file_uploader("Upload a PDF to generate worksheets", type=["pdf"])
+    if uploaded_file and st.button("Generate Worksheet"):
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+            tmp_file.write(uploaded_file.read())
+            temp_pdf_path = tmp_file.name
+
+        try:
+            reader = PdfReader(temp_pdf_path)
+            extracted_text = ""
+            for page in reader.pages:
+                extracted_text += page.extract_text() or ""
+            default_text = extracted_text.strip()
+            st.success("✅ Text extracted from PDF! You can edit it below.")
+        except Exception as e:
+            st.error(f"❌ Failed to extract text: {str(e)}")
+
+    raw_text = st.text_area("✏️ Paste or edit the text to generate worksheets", value=default_text, height=300)
+    class_grade = st.selectbox("Choose class grade: (Consider Intermediate/A-Level to be grade 11/12)", class_grade_options)
+    subject = st.selectbox("Choose class subject:", subject_options)
+    worksheet_type = st.selectbox("Choose a worksheet format:", format_options)
+    num_questions = st.number_input("🔢 Number of questions", min_value=1, max_value=200, value=5, step=1)
+
+
+    # Worksheet generation flow
+    if st.button("Generate Worksheet") and raw_text.strip():
+        with st.spinner("Generating worksheet..."):
+            try:
+                # Step 1: Generate Worksheet
+                worksheet = generate_worksheet(
+                    worksheet_type=worksheet_type,
+                    raw_text=raw_text,
+                    class_grade=class_grade,
+                    subject=subject,
+                    num_questions=num_questions
+                )
+                st.success("📝 Worksheet:")
+                st.markdown(worksheet)
+
+                # Step 2: Convert to formatted Markdown for PDF
+                with st.spinner("Formatting worksheet for PDF..."):
+                    formatted_worksheet = convert_text_to_pdf(worksheet)
+
+                # Step 3: Add PDF conversion button
+                if st.button("Convert to PDF"):
+                    pdf_bytes = generate_pdf(
+                        formatted_text=formatted_worksheet,
+                        title="📝 Generated Worksheet",
+                        class_grade=class_grade,
+                        subject=subject
+                    )
+
+                    st.download_button(
+                        label="📄 Download PDF",
+                        data=pdf_bytes,
+                        file_name="generated_worksheet.pdf",
+                        mime="application/pdf"
+                    )
+                # Step 4: Add DOCX conversion button
+                if st.button("Convert to Docx"):
+                    pdf_bytes = generate_docx(
+                        formatted_text=formatted_worksheet,
+                        title="📝 Generated Worksheet",
+                        class_grade=class_grade,
+                        subject=subject
+                    )
+
+                    st.download_button(
+                        label="📄 Download Docx",
+                        data=pdf_bytes,
+                        file_name="generated_worksheet.docx",
                         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                     )
 
