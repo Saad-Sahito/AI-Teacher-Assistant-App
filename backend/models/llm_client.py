@@ -117,7 +117,7 @@ def get_max_tokens(prompt: str, model: str) -> int:
 
 
 
-def ask_openai_sync(prompt: str, model: str = "gpt-oss-120b") -> str:
+def ask_openai_sync(prompt: str, model: str = "openai/gpt-oss-120b") -> str:
     try:
         input_tokens = count_tokens(prompt, model)
         max_tokens = get_max_tokens(prompt, model)
